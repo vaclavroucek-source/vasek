@@ -19,7 +19,20 @@ function load(): StorageData {
 }
 
 function save(data: StorageData) {
-  localStorage.setItem(KEY, JSON.stringify(data));
+  try {
+    localStorage.setItem(KEY, JSON.stringify(data));
+  } catch (err) {
+    // Rethrow with a stable name so callers can identify quota errors
+    if (err instanceof DOMException && (
+      err.name === 'QuotaExceededError' ||
+      err.name === 'NS_ERROR_DOM_QUOTA_REACHED'
+    )) {
+      const e = new Error('QuotaExceededError');
+      e.name = 'QuotaExceededError';
+      throw e;
+    }
+    throw err;
+  }
 }
 
 // ─── Profiles ─────────────────────────────────────────────────────────────────

@@ -1,10 +1,11 @@
 import { useState, useRef } from 'react';
 import { v4 as uuid } from 'uuid';
-import { X, Plus, Trash2, Image, Video, FileText } from 'lucide-react';
+import { X, Plus, Trash2, Image, Video, FileText, AlertCircle, Loader2 } from 'lucide-react';
 import type { TimelineEvent, MediaItem, EventCategory } from '../types';
 import { EVENT_CATEGORY_META } from '../types';
 import { ColorPicker } from './ColorPicker';
 import { todayISO } from '../utils/dateUtils';
+import { compressImage } from '../utils/imageUtils';
 
 interface EventModalProps {
   profileId: string;
@@ -26,14 +27,17 @@ export function EventModal({ profileId, event, defaultDate, onSave, onClose, onD
   const [color, setColor]             = useState(event?.color ?? '#C17F4E');
   const [category, setCategory]       = useState<EventCategory>(event?.category ?? 'milestone');
   const [media, setMedia]             = useState<MediaItem[]>(event?.media ?? []);
-  const [videoUrl, setVideoUrl]       = useState('');
-  const [textNote, setTextNote]       = useState('');
-  const [addingMedia, setAddingMedia] = useState<null | 'video' | 'text'>(null);
+  const [videoUrl, setVideoUrl]         = useState('');
+  const [textNote, setTextNote]         = useState('');
+  const [addingMedia, setAddingMedia]   = useState<null | 'video' | 'text'>(null);
+  const [uploading, setUploading]       = useState(false);
+  const [error, setError]               = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim() || !startDate) return;
+    setError(null);
 
     const saved: TimelineEvent = {
       id: event?.id ?? uuid(),
@@ -47,19 +51,32 @@ export function EventModal({ profileId, event, defaultDate, onSave, onClose, onD
       category,
       createdAt: event?.createdAt ?? new Date().toISOString(),
     };
-    onSave(saved);
+
+    try {
+      onSave(saved);
+    } catch (err) {
+      if (err instanceof Error && err.name === 'QuotaExceededError') {
+        setError('Storage full — your browser limit is reached. Try deleting some old photos, or use a smaller image (the app compresses automatically, but very many photos add up).');
+      } else {
+        setError('Something went wrong saving this event. Please try again.');
+      }
+    }
   }
 
-  function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 8 * 1024 * 1024) { alert('Photo must be under 8 MB.'); return; }
-    const reader = new FileReader();
-    reader.onload = ev => {
-      setMedia(prev => [...prev, { id: uuid(), type: 'photo', url: ev.target?.result as string }]);
-    };
-    reader.readAsDataURL(file);
     if (fileRef.current) fileRef.current.value = '';
+    setError(null);
+    setUploading(true);
+    try {
+      const compressed = await compressImage(file);
+      setMedia(prev => [...prev, { id: uuid(), type: 'photo', url: compressed }]);
+    } catch {
+      setError('Could not process this photo. Try a different image file (JPEG or PNG work best).');
+    } finally {
+      setUploading(false);
+    }
   }
 
   function addVideo() {
@@ -110,6 +127,20 @@ export function EventModal({ profileId, event, defaultDate, onSave, onClose, onD
         </div>
 
         <div className="px-5 space-y-4 pb-8">
+          {/* Error banner */}
+          {error && (
+            <div
+              className="flex items-start gap-2.5 p-3 rounded-2xl text-sm animate-slide-up"
+              style={{ background: '#FEF2F2', border: '1.5px solid #FCC', color: '#B5573A' }}
+            >
+              <AlertCircle size={16} className="flex-shrink-0 mt-0.5" />
+              <p className="leading-snug">{error}</p>
+              <button type="button" onClick={() => setError(null)} className="flex-shrink-0 ml-auto" style={{ color: '#B5573A' }}>
+                <X size={14} />
+              </button>
+            </div>
+          )}
+
           {/* Title */}
           <div>
             <label className="text-xs font-medium block mb-1.5" style={{ color: '#6B5744' }}>Title *</label>
@@ -240,8 +271,15 @@ export function EventModal({ profileId, event, defaultDate, onSave, onClose, onD
             {!addingMedia && (
               <div className="flex gap-2">
                 <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
-                <button type="button" onClick={() => fileRef.current?.click()} className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium" style={{ background: '#F5EFE6', color: '#6B5744' }}>
-                  <Image size={14} /> Photo
+                <button
+                  type="button"
+                  onClick={() => !uploading && fileRef.current?.click()}
+                  disabled={uploading}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium"
+                  style={{ background: '#F5EFE6', color: uploading ? '#9E8A7C' : '#6B5744', opacity: uploading ? 0.7 : 1 }}
+                >
+                  {uploading ? <Loader2 size={14} className="animate-spin" /> : <Image size={14} />}
+                  {uploading ? 'Processing…' : 'Photo'}
                 </button>
                 <button type="button" onClick={() => setAddingMedia('video')} className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium" style={{ background: '#F5EFE6', color: '#6B5744' }}>
                   <Video size={14} /> Video
@@ -257,10 +295,11 @@ export function EventModal({ profileId, event, defaultDate, onSave, onClose, onD
           <div className="flex gap-3 pt-2">
             <button
               type="submit"
+              disabled={uploading}
               className="flex-1 py-3.5 rounded-2xl text-sm font-semibold transition-colors"
-              style={{ background: '#C17F4E', color: '#fff' }}
-              onMouseEnter={e => (e.currentTarget.style.background = '#A0613A')}
-              onMouseLeave={e => (e.currentTarget.style.background = '#C17F4E')}
+              style={{ background: uploading ? '#D4C9BF' : '#C17F4E', color: '#fff', cursor: uploading ? 'not-allowed' : 'pointer' }}
+              onMouseEnter={e => !uploading && (e.currentTarget.style.background = '#A0613A')}
+              onMouseLeave={e => !uploading && (e.currentTarget.style.background = '#C17F4E')}
             >
               <Plus size={16} className="inline mr-1" />
               {event ? 'Save Changes' : 'Add Event'}

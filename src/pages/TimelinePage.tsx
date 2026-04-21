@@ -9,49 +9,44 @@ import { Navbar } from '../components/Navbar';
 import { TimelineView } from '../components/TimelineView';
 
 export function TimelinePage() {
-  const { profileId, famousId } = useParams<{ profileId?: string; famousId?: string }>();
+  // Single :id param — check famous people first, then user profiles
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const isFamous = !!famousId;
-  const famousData = famousId ? getFamousPersonById(famousId) : undefined;
+  const famousData  = id ? getFamousPersonById(id) : undefined;
+  const isFamous    = !!famousData;
 
-  const [profile] = useState<Profile | null>(() => {
-    if (isFamous) return famousData?.profile ?? null;
-    if (!profileId) return null;
-    return getProfile(profileId) ?? null;
-  });
+  const [profile] = useState<Profile | null>(() =>
+    famousData?.profile ?? (id ? getProfile(id) ?? null : null)
+  );
 
-  const [events, setEvents] = useState<TimelineEvent[]>(() => {
-    if (isFamous) return famousData?.events ?? [];
-    if (!profileId) return [];
-    return getEvents(profileId);
-  });
+  const [events, setEvents] = useState<TimelineEvent[]>(() =>
+    famousData?.events ?? (id ? getEvents(id) : [])
+  );
 
-  const [eras, setEras] = useState<Era[]>(() => {
-    if (isFamous) return famousData?.eras ?? [];
-    if (!profileId) return [];
-    return getEras(profileId);
-  });
+  const [eras, setEras] = useState<Era[]>(() =>
+    famousData?.eras ?? (id ? getEras(id) : [])
+  );
 
   const handleSaveEvent = useCallback((event: TimelineEvent) => {
     saveEvent(event);
     setEvents(getEvents(event.profileId));
   }, []);
 
-  const handleDeleteEvent = useCallback((id: string) => {
-    deleteEvent(id);
-    if (profileId) setEvents(getEvents(profileId));
-  }, [profileId]);
+  const handleDeleteEvent = useCallback((eventId: string) => {
+    deleteEvent(eventId);
+    if (id && !isFamous) setEvents(getEvents(id));
+  }, [id, isFamous]);
 
   const handleSaveEra = useCallback((era: Era) => {
     saveEra(era);
     setEras(getEras(era.profileId));
   }, []);
 
-  const handleDeleteEra = useCallback((id: string) => {
-    deleteEra(id);
-    if (profileId) setEras(getEras(profileId));
-  }, [profileId]);
+  const handleDeleteEra = useCallback((eraId: string) => {
+    deleteEra(eraId);
+    if (id && !isFamous) setEras(getEras(id));
+  }, [id, isFamous]);
 
   function copyShareLink() {
     if (!profile) return;
@@ -97,7 +92,7 @@ export function TimelinePage() {
                   <Share2 size={16} />
                 </button>
                 <button
-                  onClick={() => navigate(`/profile/${profileId}/edit`)}
+                  onClick={() => navigate(`/profile/${id}/edit`)}
                   className="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
                   style={{ color: '#6B5744' }}
                   title="Edit profile"
@@ -123,19 +118,14 @@ export function TimelinePage() {
       />
 
       {/* Profile header */}
-      <div
-        className="px-4 py-5 flex items-center gap-4"
-        style={{ borderBottom: '1px solid #E8DDD4', background: '#fff' }}
-      >
+      <div className="px-4 py-5 flex items-center gap-4" style={{ borderBottom: '1px solid #E8DDD4', background: '#fff' }}>
         <div
           className="w-16 h-16 rounded-full flex-shrink-0 flex items-center justify-center overflow-hidden"
           style={{ background: '#F5EFE6' }}
         >
-          {profile.avatar ? (
-            <img src={profile.avatar} alt={profile.name} className="w-full h-full object-cover" />
-          ) : (
-            <span className="text-2xl">{profile.species === 'animal' ? '🐾' : isFamous ? '🌟' : '👤'}</span>
-          )}
+          {profile.avatar
+            ? <img src={profile.avatar} alt={profile.name} className="w-full h-full object-cover" />
+            : <span className="text-2xl">{isFamous ? '🌟' : profile.species === 'animal' ? '🐾' : '👤'}</span>}
         </div>
 
         <div className="flex-1 min-w-0">
@@ -155,10 +145,7 @@ export function TimelinePage() {
       </div>
 
       {/* Stats bar */}
-      <div
-        className="flex px-0"
-        style={{ borderBottom: '1px solid #E8DDD4', background: '#F5EFE6' }}
-      >
+      <div className="flex" style={{ borderBottom: '1px solid #E8DDD4', background: '#F5EFE6' }}>
         {[
           { label: 'Events', value: events.length },
           { label: 'Eras',   value: eras.length },
@@ -172,19 +159,17 @@ export function TimelinePage() {
       </div>
 
       {/* Timeline */}
-      <div className="max-w-xl mx-auto">
-        <div className="pt-4">
-          <TimelineView
-            profile={profile}
-            events={events}
-            eras={eras}
-            isEditable={!isFamous}
-            onSaveEvent={handleSaveEvent}
-            onDeleteEvent={handleDeleteEvent}
-            onSaveEra={handleSaveEra}
-            onDeleteEra={handleDeleteEra}
-          />
-        </div>
+      <div className="max-w-xl mx-auto pt-4">
+        <TimelineView
+          profile={profile}
+          events={events}
+          eras={eras}
+          isEditable={!isFamous}
+          onSaveEvent={handleSaveEvent}
+          onDeleteEvent={handleDeleteEvent}
+          onSaveEra={handleSaveEra}
+          onDeleteEra={handleDeleteEra}
+        />
       </div>
     </div>
   );

@@ -5,7 +5,6 @@ import type { TimelineEvent, MediaItem, EventCategory } from '../types';
 import { EVENT_CATEGORY_META } from '../types';
 import { ColorPicker } from './ColorPicker';
 import { todayISO } from '../utils/dateUtils';
-import { compressImage } from '../utils/imageUtils';
 
 interface EventModalProps {
   profileId: string;
@@ -63,20 +62,46 @@ export function EventModal({ profileId, event, defaultDate, onSave, onClose, onD
     }
   }
 
-  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     if (fileRef.current) fileRef.current.value = '';
     setError(null);
     setUploading(true);
-    try {
-      const compressed = await compressImage(file);
-      setMedia(prev => [...prev, { id: uuid(), type: 'photo', url: compressed }]);
-    } catch {
-      setError('Could not process this photo. Try a different image file (JPEG or PNG work best).');
-    } finally {
+
+    const reader = new FileReader();
+    reader.onerror = () => {
+      setError('Could not read this photo. Try a different image file.');
       setUploading(false);
-    }
+    };
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      const img = new window.Image();
+      img.onerror = () => {
+        // Canvas failed — store as-is (may be large but don't block the user)
+        setMedia(prev => [...prev, { id: uuid(), type: 'photo', url: dataUrl }]);
+        setUploading(false);
+      };
+      img.onload = () => {
+        try {
+          const MAX_W = 900;
+          let w = img.width, h = img.height;
+          if (w > MAX_W) { h = Math.round(h * MAX_W / w); w = MAX_W; }
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          canvas.getContext('2d')!.drawImage(img, 0, 0, w, h);
+          const compressed = canvas.toDataURL('image/jpeg', 0.65);
+          setMedia(prev => [...prev, { id: uuid(), type: 'photo', url: compressed }]);
+        } catch {
+          // Canvas blocked (rare on mobile) — store original
+          setMedia(prev => [...prev, { id: uuid(), type: 'photo', url: dataUrl }]);
+        }
+        setUploading(false);
+      };
+      img.src = dataUrl;
+    };
+    reader.readAsDataURL(file);
   }
 
   function addVideo() {
@@ -127,20 +152,6 @@ export function EventModal({ profileId, event, defaultDate, onSave, onClose, onD
         </div>
 
         <div className="px-5 space-y-4 pb-8">
-          {/* Error banner */}
-          {error && (
-            <div
-              className="flex items-start gap-2.5 p-3 rounded-2xl text-sm animate-slide-up"
-              style={{ background: '#FEF2F2', border: '1.5px solid #FCC', color: '#B5573A' }}
-            >
-              <AlertCircle size={16} className="flex-shrink-0 mt-0.5" />
-              <p className="leading-snug">{error}</p>
-              <button type="button" onClick={() => setError(null)} className="flex-shrink-0 ml-auto" style={{ color: '#B5573A' }}>
-                <X size={14} />
-              </button>
-            </div>
-          )}
-
           {/* Title */}
           <div>
             <label className="text-xs font-medium block mb-1.5" style={{ color: '#6B5744' }}>Title *</label>
@@ -292,7 +303,21 @@ export function EventModal({ profileId, event, defaultDate, onSave, onClose, onD
           </div>
 
           {/* Actions */}
-          <div className="flex gap-3 pt-2">
+          <div className="flex flex-col gap-3 pt-2">
+          {/* Error — shown here so it's always visible near the submit button */}
+          {error && (
+            <div
+              className="flex items-start gap-2.5 p-3 rounded-2xl text-sm"
+              style={{ background: '#FEF2F2', border: '1.5px solid #FCC', color: '#B5573A' }}
+            >
+              <AlertCircle size={16} className="flex-shrink-0 mt-0.5" />
+              <p className="leading-snug flex-1">{error}</p>
+              <button type="button" onClick={() => setError(null)} className="flex-shrink-0" style={{ color: '#B5573A' }}>
+                <X size={14} />
+              </button>
+            </div>
+          )}
+          <div className="flex gap-3">
             <button
               type="submit"
               disabled={uploading}
@@ -316,6 +341,7 @@ export function EventModal({ profileId, event, defaultDate, onSave, onClose, onD
                 <Trash2 size={16} className="inline" />
               </button>
             )}
+          </div>
           </div>
         </div>
       </form>

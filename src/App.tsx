@@ -9,14 +9,13 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/"                              element={<HomePage />} />
-        <Route path="/profile/create"               element={<CreateProfilePage />} />
-        <Route path="/profile/:profileId/edit"      element={<CreateProfilePage />} />
-        <Route path="/timeline/:profileId"          element={<TimelinePage />} />
-        <Route path="/timeline/famous/:famousId"    element={<TimelinePage />} />
-        <Route path="/compare"                      element={<ComparePage />} />
-        <Route path="/share/:shareId"               element={<SharePage />} />
-        <Route path="*"                             element={<Navigate to="/" replace />} />
+        <Route path="/"                           element={<HomePage />} />
+        <Route path="/profile/create"             element={<CreateProfilePage />} />
+        <Route path="/profile/:profileId/edit"    element={<CreateProfilePage />} />
+        <Route path="/timeline/:id"               element={<TimelinePage />} />
+        <Route path="/compare"                    element={<ComparePage />} />
+        <Route path="/share/:shareId"             element={<SharePage />} />
+        <Route path="*"                           element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );

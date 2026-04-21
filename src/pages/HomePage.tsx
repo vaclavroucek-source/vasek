@@ -186,7 +186,7 @@ export function HomePage() {
             {FAMOUS_PEOPLE.map(fp => (
               <Link
                 key={fp.profile.id}
-                to={`/timeline/famous/${fp.profile.id}`}
+                to={`/timeline/${fp.profile.id}`}
                 className="flex items-center gap-3 p-4 rounded-2xl no-underline transition-colors"
                 style={{ background: '#fff', border: '1px solid #E8DDD4', textDecoration: 'none', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}
                 onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)')}

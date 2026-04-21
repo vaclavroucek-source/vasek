@@ -56,7 +56,7 @@ const einstein: FamousPersonData = {
   },
   events: [
     ev(einsteinId, 'ae1',  'Born in Ulm, Germany',                          '1879-03-14', 'Born to Hermann and Pauline Einstein.', '#C17F4E', 'milestone'),
-    ev(einsteinId, 'ae2',  'Enrolled at ETH Zürich',                         '1896-10-01', 'Began studies in mathematics and physics at the Swiss Federal Polytechnic School.', '#7BA68A', 'education' as 'work'),
+    ev(einsteinId, 'ae2',  'Enrolled at ETH Zürich',                         '1896-10-01', 'Began studies in mathematics and physics at the Swiss Federal Polytechnic School.', '#7BA68A', 'achievement'),
     ev(einsteinId, 'ae3',  'Started at the Patent Office',                   '1902-06-16', 'Began working as a technical expert at the Federal Office for Intellectual Property in Bern.', '#C9A847', 'work'),
     ev(einsteinId, 'ae4',  'Married Mileva Marić',                           '1903-01-06', 'Married his university classmate and fellow physicist.', '#C47F85', 'family'),
     ev(einsteinId, 'ae5',  'Annus Mirabilis — Special Relativity',           '1905-06-30', 'Published four groundbreaking papers including the special theory of relativity and E=mc².', '#B5573A', 'achievement'),
@@ -193,7 +193,7 @@ const tesla: FamousPersonData = {
   },
   events: [
     ev(teslaId, 'nt1',  'Born in Smiljan, Serbia',                 '1856-07-10', 'Born at midnight during a lightning storm — the midwife reportedly called him "a child of light".', '#C17F4E', 'milestone'),
-    ev(teslaId, 'nt2',  'Enrolled at Graz University of Technology', '1875-01-01', 'Studied electrical engineering and physics; reportedly studied up to 19 hours a day.', '#7BA68A', 'education' as 'work'),
+    ev(teslaId, 'nt2',  'Enrolled at Graz University of Technology', '1875-01-01', 'Studied electrical engineering and physics; reportedly studied up to 19 hours a day.', '#7BA68A', 'achievement'),
     ev(teslaId, 'nt3',  'Joined Edison\'s company in Paris',       '1882-01-01', 'Began working for the Continental Edison Company in Paris.', '#C9A847', 'work'),
     ev(teslaId, 'nt4',  'Arrived in New York, joined Edison',      '1884-06-06', 'Arrived in the USA with four cents, a letter of introduction, and a head full of ideas.', '#6B9EC4', 'milestone'),
     ev(teslaId, 'nt5',  'Left Edison; founded Tesla Electric Light', '1885-01-01', 'Parted ways with Edison over unpaid promises; started his own company.', '#B5573A', 'work'),

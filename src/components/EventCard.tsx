@@ -9,7 +9,7 @@ interface EventCardProps {
 }
 
 export function EventCard({ event, onClick, compact = false }: EventCardProps) {
-  const meta = EVENT_CATEGORY_META[event.category];
+  const meta = EVENT_CATEGORY_META[event.category] ?? { icon: '📌', label: event.category };
   const photo = event.media.find(m => m.type === 'photo');
 
   if (compact) {

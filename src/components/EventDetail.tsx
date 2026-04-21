@@ -16,7 +16,7 @@ function getYouTubeId(url: string) {
 }
 
 export function EventDetail({ event, onClose, onEdit, onDelete }: EventDetailProps) {
-  const meta = EVENT_CATEGORY_META[event.category];
+  const meta = EVENT_CATEGORY_META[event.category] ?? { icon: '📌', label: event.category };
 
   return (
     <div

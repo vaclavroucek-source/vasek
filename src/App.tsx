@@ -4,12 +4,14 @@ import { CreateProfilePage } from './pages/CreateProfilePage';
 import { TimelinePage }      from './pages/TimelinePage';
 import { ComparePage }       from './pages/ComparePage';
 import { SharePage }         from './pages/SharePage';
+import { PhotoEditorPage }   from './pages/PhotoEditorPage';
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/"                           element={<HomePage />} />
+        <Route path="/editor"                     element={<PhotoEditorPage />} />
         <Route path="/profile/create"             element={<CreateProfilePage />} />
         <Route path="/profile/:profileId/edit"    element={<CreateProfilePage />} />
         <Route path="/timeline/:id"               element={<TimelinePage />} />
